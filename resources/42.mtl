@@ -1,0 +1,10 @@
+# Fichier MTL coloré pour le logo 42
+# Créé avec différentes couleurs vibrantes
+
+newmtl Material
+Ka 0.05 0.05 0.05     # Ambient très sombre
+Kd 0.6 0.6 0.6        # Diffuse gris moyen
+Ks 0.8 0.8 0.8        # Specular métallique
+Ns 96.078431          # Valeur originale
+d 1.0
+illum 2
