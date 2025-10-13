@@ -1,6 +1,13 @@
 #include "../include/scop.hpp"
 
-Scop::Scop(): _running(false), _window(nullptr) {}
+Scop::Scop(): _running(false), _window(nullptr), 
+			   _lastMouseX(WINDOW_WIDTH/2.0), _lastMouseY(WINDOW_HEIGHT/2.0),
+			   _firstMouse(true), _yaw(-90.0f), _pitch(0.0f), 
+			   _mousePressed(false),
+			   _cameraX(0.0f), _cameraY(0.0f), _cameraZ(5.0f),
+			   _frontX(0.0f), _frontY(0.0f), _frontZ(-1.0f),
+			   _textureEnabled(true), _tKeyPressed(false), _fKeyPressed(false),
+			   _plusKeyPressed(false), _minusKeyPressed(false) {}
 
 Scop::~Scop() { cleanup(); }
 
@@ -30,6 +37,9 @@ bool Scop::init()
 
 	glfwMakeContextCurrent(_window);
 	glfwSetWindowUserPointer(_window, this);
+	
+	glfwSetCursorPosCallback(_window, mouseCallback);
+	glfwSetMouseButtonCallback(_window, mouseButtonCallback);
 
 	if (glewInit() != GLEW_OK)
 		return false;
@@ -56,12 +66,23 @@ void Scop::run()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
 
-		gluLookAt(0.0, 0.0, 5.0,
-				  0.0, 0.0, 0.0,
+		float yawRad = _yaw * M_PI / 180.0f;
+		float pitchRad = _pitch * M_PI / 180.0f;
+		
+		_frontX = cos(yawRad) * cos(pitchRad);
+		_frontY = sin(pitchRad);
+		_frontZ = sin(yawRad) * cos(pitchRad);
+		
+		float targetX = _cameraX + _frontX;
+		float targetY = _cameraY + _frontY;
+		float targetZ = _cameraZ + _frontZ;
+
+		gluLookAt(_cameraX, _cameraY, _cameraZ,
+				  targetX, targetY, targetZ,
 				  0.0, 1.0, 0.0);
 
 		glTranslatef(_render.objectX, _render.objectY, _render.objectZ);
-		_render.rend();
+		_render.rend(&_texture, _textureEnabled);
 
 		glfwSwapBuffers(_window);
 	}
@@ -84,8 +105,10 @@ bool Scop::loadObjFile(const std::string &filename)
 
 bool Scop::loadTexture(const std::string &filename)
 {
-	(void)filename;
-	std::cout << "Texture loading not implemented yet." << std::endl;
+	if (!_texture.loadFromFile(filename)) {
+		std::cerr << "Failed to load texture file: " << filename << std::endl;
+		return false;
+	}
 	return true;
 }
 
