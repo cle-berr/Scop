@@ -5,7 +5,7 @@ CXXFLAGS	= -Wall -Wextra -Werror -std=c++17
 DEBUGFLAGS	= -g -fsanitize=address
 OPTFLAGS	= -O3 -DNDEBUG
 
-LIBS		= -lglfw -lGLEW -lGL -lGLU -lm
+LIBS		= -lglfw -lGLEW -lGL -lGLU -lm -lSOIL
 
 SRCDIR		= src
 INCDIR		= include

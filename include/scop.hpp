@@ -47,6 +47,4 @@ class Scop
 		bool _textureEnabled;
 		bool _tKeyPressed;
 		bool _fKeyPressed;
-		bool _plusKeyPressed;
-		bool _minusKeyPressed;
 };

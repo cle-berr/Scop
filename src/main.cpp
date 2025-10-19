@@ -6,8 +6,7 @@ Scop::Scop(): _running(false), _window(nullptr),
 			   _mousePressed(false),
 			   _cameraX(0.0f), _cameraY(0.0f), _cameraZ(5.0f),
 			   _frontX(0.0f), _frontY(0.0f), _frontZ(-1.0f),
-			   _textureEnabled(true), _tKeyPressed(false), _fKeyPressed(false),
-			   _plusKeyPressed(false), _minusKeyPressed(false) {}
+			   _textureEnabled(true), _tKeyPressed(false), _fKeyPressed(false) {}
 
 Scop::~Scop() { cleanup(); }
 

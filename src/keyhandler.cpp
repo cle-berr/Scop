@@ -2,13 +2,6 @@
 
 void Scop::handleInput()
 {
-	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		_running = false;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_M) == GLFW_PRESS) {
-		// Toggle material usage
-	}
-
 	if (glfwGetKey(_window, GLFW_KEY_T) == GLFW_PRESS) {
 		if (!_tKeyPressed) {
 			_textureEnabled = !_textureEnabled;
@@ -31,27 +24,19 @@ void Scop::handleInput()
 		_fKeyPressed = false;
 	}
 
-	if (glfwGetKey(_window, GLFW_KEY_KP_ADD) == GLFW_PRESS || glfwGetKey(_window, GLFW_KEY_EQUAL) == GLFW_PRESS) {
-		if (!_plusKeyPressed) {
-			_render.increaseTextureRepeating();
-			_plusKeyPressed = true;
-			std::cout << "Repeating texture: " << _render.getTextureRepeating() << std::endl;
-		}
-	} else {
-		_plusKeyPressed = false;
-	}
-
-	if (glfwGetKey(_window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS || glfwGetKey(_window, GLFW_KEY_MINUS) == GLFW_PRESS) {
-		if (!_minusKeyPressed) {
-			_render.decreaseTextureRepeating();
-			_minusKeyPressed = true;
-			std::cout << "Tiling texture: " << _render.getTextureRepeating() << std::endl;
-		}
-	} else {
-		_minusKeyPressed = false;
-	}
-
 	float cameraSpeed = 0.1f;
+	if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+		cameraSpeed += 1.0f;
+	}
+	else {
+		cameraSpeed = 0.1f;
+	}
+	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		_running = false;
+	}
+	if (glfwGetKey(_window, GLFW_KEY_M) == GLFW_PRESS) {
+		// Toggle material usage
+	}
 	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS) {
 		_cameraX += _frontX * cameraSpeed;
 		_cameraY += _frontY * cameraSpeed;
@@ -89,7 +74,7 @@ void Scop::handleInput()
 	if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		_cameraY += cameraSpeed;
 	}
-	if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+	if (glfwGetKey(_window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) {
 		_cameraY -= cameraSpeed;
 	}
 

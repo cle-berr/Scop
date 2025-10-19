@@ -27,16 +27,10 @@ class renderObj
 		void setRotationAngle(float angle) { _rotationAngle = angle; }
 		float getRotationAngle() const { return _rotationAngle; }
 		
-		void setTextureFace(int face) { _currentTextureFace = face; } // 0=toutes, 1-6=faces
+		void setTextureFace(int face) { _currentTextureFace = face; }
 		int getTextureFace() const { return _currentTextureFace; }
 		void nextTextureFace() { _currentTextureFace = (_currentTextureFace + 1) % 7; }
-		
-		void setTextureRepeating(float tiling) { _textureRepeating = tiling; }
-		float getTextureRepeating() const { return _textureRepeating; }
-		void increaseTextureRepeating() { _textureRepeating += 0.5f; if (_textureRepeating > 50.0f) _textureRepeating = 50.0f; }
-		void decreaseTextureRepeating() { _textureRepeating -= 0.5f; if (_textureRepeating < 0.5f) _textureRepeating = 0.5f; }
 
-		void rend();
 		void rend(const class Texture* texture, bool useTexture);
 		
 		float objectX, objectY, objectZ;
@@ -48,6 +42,11 @@ class renderObj
 		float _rotationAngle;
 		float _rotationSpeed;
 		int _currentTextureFace;
-		float _textureRepeating;
-		
+
+		void setupTransformations();
+		void setupTexture(const Texture* texture, bool useTexture);
+		void cleanupTexture(const Texture* texture, bool useTexture);
+		void renderTriangle(size_t triangleIndex, const Texture* texture, bool useTexture);
+		int calculateTriangleFace(float vertices[3][3]);
+		void calculateTextureCoords(float x, float y, float z, int triangleFace, float& u, float& v);
 };
