@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <GL/glew.h>
+#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include "obj_parser.hpp"
@@ -28,6 +29,7 @@ class Scop
 	private:
 		void handleInput();
 		void updateCamera(double xpos, double ypos);
+		void updateSunPosition();
 		
 		bool _running;
 		GLFWwindow *_window;
@@ -44,7 +46,16 @@ class Scop
 		float _cameraX, _cameraY, _cameraZ;
 		float _frontX, _frontY, _frontZ;
 		
+		float _sunX, _sunY, _sunZ;
+		float _sunOrbitRadius;
+		float _sunOrbitAngleH;
+		float _sunOrbitAngleV;
+		
 		bool _textureEnabled;
+		bool _materialEnabled;
+		bool _sunEnabled;
 		bool _tKeyPressed;
 		bool _fKeyPressed;
+		bool _mKeyPressed;
+		bool _lKeyPressed;
 };

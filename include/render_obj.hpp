@@ -3,9 +3,11 @@
 #include <GL/glew.h>
 #include <vector>
 #include "obj_parser.hpp"
+#include "material.hpp"
 
 // Forward declaration
 class Texture;
+class Material;
 
 struct FaceData
 {
@@ -42,7 +44,8 @@ class renderObj
 		float _rotationAngle;
 		float _rotationSpeed;
 		int _currentTextureFace;
-
+		
+		Material *_material; 
 		void setupTransformations();
 		void setupTexture(const Texture* texture, bool useTexture);
 		void cleanupTexture(const Texture* texture, bool useTexture);

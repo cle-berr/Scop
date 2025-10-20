@@ -2,99 +2,177 @@
 
 void Scop::handleInput()
 {
-	if (glfwGetKey(_window, GLFW_KEY_T) == GLFW_PRESS) {
-		if (!_tKeyPressed) {
-			_textureEnabled = !_textureEnabled;
-			_tKeyPressed = true;
-		}
-	} else {
-		_tKeyPressed = false;
-	}
-
-	if (glfwGetKey(_window, GLFW_KEY_F) == GLFW_PRESS) {
-		if (!_fKeyPressed) {
-			_render.nextTextureFace();
-			_fKeyPressed = true;
-			
-			int currentFace = _render.getTextureFace();
-			const char* faceNames[] = {"Toutes les faces", "Face X+", "Face X-", "Face Y+", "Face Y-", "Face Z+", "Face Z-"};
-			std::cout << "Face texture: " << faceNames[currentFace] << std::endl;
-		}
-	} else {
-		_fKeyPressed = false;
-	}
-
 	float cameraSpeed = 0.1f;
-	if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		cameraSpeed += 1.0f;
-	}
-	else {
-		cameraSpeed = 0.1f;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		_running = false;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_M) == GLFW_PRESS) {
-		// Toggle material usage
-	}
-	if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS) {
-		_cameraX += _frontX * cameraSpeed;
-		_cameraY += _frontY * cameraSpeed;
-		_cameraZ += _frontZ * cameraSpeed;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS) {
-		_cameraX -= _frontX * cameraSpeed;
-		_cameraY -= _frontY * cameraSpeed;
-		_cameraZ -= _frontZ * cameraSpeed;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS) {
-		float rightX = _frontY * 0.0f - _frontZ * 1.0f;
-		float rightZ = _frontX * 1.0f - _frontY * 0.0f;
-		float length = sqrt(rightX * rightX + rightZ * rightZ);
-		if (length > 0) {
-			rightX /= length;
-			rightZ /= length;
+	float objectSpeed = 0.1f;
+
+	//usefull key
+	{
+		if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+			_running = false;// close the window proprely
 		}
-		_cameraX -= rightX * cameraSpeed;
-		_cameraZ -= rightZ * cameraSpeed;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS) {
-		float rightX = _frontY * 0.0f - _frontZ * 1.0f;
-		float rightZ = _frontX * 1.0f - _frontY * 0.0f;
-		float length = sqrt(rightX * rightX + rightZ * rightZ);
-		if (length > 0) {
-			rightX /= length;
-			rightZ /= length;
+		if (glfwGetKey(_window, GLFW_KEY_R) == GLFW_PRESS) {
+			_cameraX = 0.0f;
+			_cameraY = 0.0f;
+			_cameraZ = 5.0f;
+			_frontX = 0.0f;
+			_frontY = 0.0f;
+			_frontZ = -1.0f;
+			_textureEnabled = false;
+			_materialEnabled = false;
+			_sunEnabled = false;
+			_yaw = -90.0f;
+			_pitch = 0.0f;
+			_render.objectX = 0.0f;
+			_render.objectY = 0.0f;
+			_render.objectZ = 0.0f;
+			_sunOrbitAngleH = 45.0f;
+			_sunOrbitAngleV = 35.26f;
 		}
-		_cameraX += rightX * cameraSpeed;
-		_cameraZ += rightZ * cameraSpeed;
-	}
-	
-	// Contrôles verticaux
-	if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		_cameraY += cameraSpeed;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) {
-		_cameraY -= cameraSpeed;
 	}
 
-	if (glfwGetKey(_window, GLFW_KEY_I) == GLFW_PRESS) {
-		_render.objectZ -= 0.5f;
+	// Texture
+	{
+		if (glfwGetKey(_window, GLFW_KEY_T) == GLFW_PRESS) {
+			if (!_tKeyPressed) {
+				_textureEnabled = !_textureEnabled;// activate/desactivate the texture
+				_tKeyPressed = true;
+			}
+		} else {
+			_tKeyPressed = false;
+		}
+
+		if (glfwGetKey(_window, GLFW_KEY_F) == GLFW_PRESS) {
+			if (!_fKeyPressed) {
+				_render.nextTextureFace();// change texture face
+				_fKeyPressed = true;
+
+				int currentFace = _render.getTextureFace();// set texture face
+				const char* faceNames[] = {"Toutes les faces", "Face X+", "Face X-", "Face Y+", "Face Y-", "Face Z+", "Face Z-"};
+				std::cout << "Face texture: " << faceNames[currentFace] << std::endl;
+			}
+		} else {
+			_fKeyPressed = false;
+		}
 	}
-	if (glfwGetKey(_window, GLFW_KEY_K) == GLFW_PRESS) {
-		_render.objectZ += 0.5f;
+
+	// Material
+	{
+		if (glfwGetKey(_window, GLFW_KEY_M) == GLFW_PRESS) {
+			if (!_mKeyPressed) {
+				_materialEnabled = !_materialEnabled;
+				_render.setUseMaterial(_materialEnabled);
+				_mKeyPressed = true;
+			}
+			} else {
+				_mKeyPressed = false;
+		}
 	}
-	if (glfwGetKey(_window, GLFW_KEY_J) == GLFW_PRESS) {
-		_render.objectX -= 0.5f;
+
+	// Camera movement
+	if (_mousePressed) {
+		if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			cameraSpeed += 1.0f;// camera speed X10
+		} else {
+			cameraSpeed = 0.1f;// camera speed X1
+		}
+		if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS) {
+			_cameraX += _frontX * cameraSpeed;
+			_cameraY += _frontY * cameraSpeed;
+			_cameraZ += _frontZ * cameraSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS) {
+			_cameraX -= _frontX * cameraSpeed;
+			_cameraY -= _frontY * cameraSpeed;
+			_cameraZ -= _frontZ * cameraSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS) {
+			float rightX = _frontY * 0.0f - _frontZ * 1.0f;
+			float rightZ = _frontX * 1.0f - _frontY * 0.0f;
+			float length = sqrt(rightX * rightX + rightZ * rightZ);
+			if (length > 0) {
+				rightX /= length;
+				rightZ /= length;
+			}
+			_cameraX -= rightX * cameraSpeed;
+			_cameraZ -= rightZ * cameraSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS) {
+			float rightX = _frontY * 0.0f - _frontZ * 1.0f;
+			float rightZ = _frontX * 1.0f - _frontY * 0.0f;
+			float length = sqrt(rightX * rightX + rightZ * rightZ);
+			if (length > 0) {
+				rightX /= length;
+				rightZ /= length;
+			}
+			_cameraX += rightX * cameraSpeed;
+			_cameraZ += rightZ * cameraSpeed;
+		}
+
+		if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			_cameraY += cameraSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) {
+			_cameraY -= cameraSpeed;
+		}
 	}
+
+	// Object movement
+	if (!_mousePressed) {
+		if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			objectSpeed += 1.0f;// camera speed X10
+		} else {
+			objectSpeed = 0.3f;// camera speed X1
+		}
+		if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS) {
+			_render.objectZ -= objectSpeed; // front
+		}
+		if (glfwGetKey(_window, GLFW_KEY_S) == GLFW_PRESS) {
+			_render.objectZ += objectSpeed; // back
+		}
+		if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS) {
+			_render.objectX -= objectSpeed; // left
+		}
+		if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS) {
+			_render.objectX += objectSpeed;// right
+		}
+		if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			_render.objectY += objectSpeed;// up
+		}
+		if (glfwGetKey(_window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) {
+			_render.objectY -= objectSpeed;// down
+		}
+	}
+
+	// Sun (light point)
 	if (glfwGetKey(_window, GLFW_KEY_L) == GLFW_PRESS) {
-		_render.objectX += 0.5f;
+		if (!_lKeyPressed) {
+			_sunEnabled = !_sunEnabled;
+			_lKeyPressed = true;
+		}
+	} else {
+			_lKeyPressed = false;
 	}
-	if (glfwGetKey(_window, GLFW_KEY_U) == GLFW_PRESS) {
-		_render.objectY += 0.5f;
-	}
-	if (glfwGetKey(_window, GLFW_KEY_O) == GLFW_PRESS) {
-		_render.objectY -= 0.5f;
+	if (_sunEnabled) {
+		float angleSpeed = 2.0f;
+		
+		if (glfwGetKey(_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+			angleSpeed = 5.0f;
+		}
+		
+		if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+			_sunOrbitAngleH -= angleSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			_sunOrbitAngleH += angleSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_UP) == GLFW_PRESS) {
+			_sunOrbitAngleV += angleSpeed;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+			_sunOrbitAngleV -= angleSpeed;
+		}
+		
+		updateSunPosition();
 	}
 }
 
@@ -152,4 +230,14 @@ void Scop::updateCamera(double xpos, double ypos)
 		_pitch = 89.0f;
 	if (_pitch < -89.0f)
 		_pitch = -89.0f;
+}
+
+void Scop::updateSunPosition()
+{
+	float angleH_rad = _sunOrbitAngleH * M_PI / 180.0f;
+	float angleV_rad = _sunOrbitAngleV * M_PI / 180.0f;
+
+	_sunX = _sunOrbitRadius * cos(angleV_rad) * cos(angleH_rad);
+	_sunY = _sunOrbitRadius * sin(angleV_rad);
+	_sunZ = _sunOrbitRadius * cos(angleV_rad) * sin(angleH_rad);
 }

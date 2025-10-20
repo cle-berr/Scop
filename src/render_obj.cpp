@@ -63,7 +63,9 @@ void renderObj::rend(const Texture* texture, bool useTexture)
 	
 	setupTransformations();
 	setupTexture(texture, useTexture);
-	
+	if (_useMaterial && _material) {
+		_material->apply();
+	}
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < _faceData.indices.size(); i += 3) {
 		renderTriangle(i, texture, useTexture);
@@ -108,18 +110,42 @@ void renderObj::cleanupTexture(const Texture* texture, bool useTexture)
 
 void renderObj::renderTriangle(size_t triangleIndex, const Texture* texture, bool useTexture)
 {
-	if (!useTexture || !texture) {
-		static const float colors[3][3] = {{0.1f, 0.1f, 0.1f}, {0.2f, 0.2f, 0.2f}, {0.3f, 0.3f, 0.3f}};
-		const float* color = colors[(triangleIndex/3) % 3];
-		glColor3f(color[0], color[1], color[2]);
-	}
-
 	float vertices[3][3];
 	for (int i = 0; i < 3; ++i) {
 		unsigned int index = _faceData.indices[triangleIndex + i];
 		vertices[i][0] = _faceData.vertices[index * 3] - _centerX;
 		vertices[i][1] = _faceData.vertices[index * 3 + 1] - _centerY;
 		vertices[i][2] = _faceData.vertices[index * 3 + 2] - _centerZ;
+	}
+	
+	float edge1[3] = {
+		vertices[1][0] - vertices[0][0],
+		vertices[1][1] - vertices[0][1],
+		vertices[1][2] - vertices[0][2]
+	};
+	float edge2[3] = {
+		vertices[2][0] - vertices[0][0],
+		vertices[2][1] - vertices[0][1],
+		vertices[2][2] - vertices[0][2]
+	};
+	
+	float nx = edge1[1] * edge2[2] - edge1[2] * edge2[1];
+	float ny = edge1[2] * edge2[0] - edge1[0] * edge2[2];
+	float nz = edge1[0] * edge2[1] - edge1[1] * edge2[0];
+	
+	float nLength = sqrt(nx*nx + ny*ny + nz*nz);
+	if (nLength > 0.0f) {
+		nx /= nLength;
+		ny /= nLength;
+		nz /= nLength;
+	}
+	
+	glNormal3f(-nx, -ny, -nz);
+	
+	if (!useTexture || !texture) {
+		size_t triangleNum = triangleIndex / 3;
+		float grayValue = 0.3f + (triangleNum % 3) * 0.1f;
+		glColor3f(grayValue, grayValue, grayValue);
 	}
 	
 	int triangleFace = calculateTriangleFace(vertices);

@@ -14,7 +14,7 @@ SHADERDIR	= shaders
 
 INCLUDES	= -I$(INCDIR) -I/usr/include/GL
 
-SRCS		= $(SRCDIR)/main.cpp $(SRCDIR)/keyhandler.cpp $(SRCDIR)/obj_parser.cpp $(SRCDIR)/render_obj.cpp $(SRCDIR)/texture.cpp #$(SRCDIR)/material.cpp
+SRCS		= $(SRCDIR)/main.cpp $(SRCDIR)/keyhandler.cpp $(SRCDIR)/obj_parser.cpp $(SRCDIR)/render_obj.cpp $(SRCDIR)/texture.cpp $(SRCDIR)/material.cpp
 OBJS		= $(SRCS:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 RED			= \033[0;31m

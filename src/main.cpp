@@ -6,7 +6,14 @@ Scop::Scop(): _running(false), _window(nullptr),
 			   _mousePressed(false),
 			   _cameraX(0.0f), _cameraY(0.0f), _cameraZ(5.0f),
 			   _frontX(0.0f), _frontY(0.0f), _frontZ(-1.0f),
-			   _textureEnabled(true), _tKeyPressed(false), _fKeyPressed(false) {}
+			   _sunX(5.0f), _sunY(5.0f), _sunZ(5.0f),
+			   _sunOrbitRadius(8.66f), _sunOrbitAngleH(45.0f), _sunOrbitAngleV(35.26f),
+			   _textureEnabled(false), _materialEnabled(true), _sunEnabled(false),
+			   _tKeyPressed(false), _fKeyPressed(false),
+			   _mKeyPressed(false), _lKeyPressed(false)
+{
+	updateSunPosition();
+}
 
 Scop::~Scop() { cleanup(); }
 
@@ -44,11 +51,15 @@ bool Scop::init()
 		return false;
 	
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, (double)WINDOW_WIDTH/(double)WINDOW_HEIGHT, 0.1, 100.0);
+	gluPerspective(45.0, (double)WINDOW_WIDTH/(double)WINDOW_HEIGHT, 0.1, 10240.0);
 	glMatrixMode(GL_MODELVIEW);
 	
 	_running = true;
@@ -79,6 +90,26 @@ void Scop::run()
 		gluLookAt(_cameraX, _cameraY, _cameraZ,
 				  targetX, targetY, targetZ,
 				  0.0, 1.0, 0.0);
+
+		if (_sunEnabled) {
+			glEnable(GL_LIGHTING);
+			glEnable(GL_LIGHT0);
+			GLfloat lightPos[] = { _sunX, _sunY, _sunZ, 1.0f };
+			glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+
+			glDisable(GL_LIGHTING);
+    		glColor3f(1.0f, 1.0f, 0.0f);
+    		glPushMatrix();
+    		glTranslatef(lightPos[0], lightPos[1], lightPos[2]);
+    		GLUquadric* quad = gluNewQuadric();
+			gluSphere(quad, 0.3, 20, 20);
+			gluDeleteQuadric(quad);
+    		glPopMatrix();
+    		glEnable(GL_LIGHTING); 
+		} else {
+			glDisable(GL_LIGHTING);
+			glDisable(GL_LIGHT0);
+		}
 
 		glTranslatef(_render.objectX, _render.objectY, _render.objectZ);
 		_render.rend(&_texture, _textureEnabled);
