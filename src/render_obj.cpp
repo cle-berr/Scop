@@ -6,7 +6,12 @@
 renderObj::renderObj() : objectX(0.0f), objectY(0.0f), objectZ(0.0f),
 						 _faceData(), _centerX(0.0f), _centerY(0.0f), _centerZ(0.0f),
 					 _useMaterial(false), _rotationAngle(0.0f), _rotationSpeed(0.03f), 
-					 _currentTextureFace(0) {}renderObj::~renderObj() {}
+					 _currentTextureFace(0),
+					 _minX(1000.0f), _maxX(-1000.0f), _minY(1000.0f), _maxY(-1000.0f),
+					 _minZ(1000.0f), _maxZ(-1000.0f), _boundsCalculated(false),
+					 _material(nullptr) {}
+
+renderObj::~renderObj() {}
 
 bool renderObj::setupFromParser(const objParser &parser)
 {
@@ -34,6 +39,8 @@ bool renderObj::setupFromParser(const objParser &parser)
 	}
 
 	calculateCenter();
+
+	_boundsCalculated = false;  // Réinitialiser pour recalculer les bounds
 
 	return !_faceData.vertices.empty() && !_faceData.indices.empty();
 }
@@ -63,14 +70,35 @@ void renderObj::rend(const Texture* texture, bool useTexture)
 	
 	setupTransformations();
 	setupTexture(texture, useTexture);
+	
+	// Gestion du matériau
 	if (_useMaterial && _material) {
+		glDisable(GL_COLOR_MATERIAL);  // Désactiver pour que le matériau fonctionne
 		_material->apply();
+	} else {
+		glEnable(GL_COLOR_MATERIAL);   // Activer pour les couleurs par défaut
+		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+		
+		// Définir un matériau par défaut gris si pas de texture
+		if (!useTexture || !texture) {
+			GLfloat defaultAmbient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+			GLfloat defaultDiffuse[] = { 0.7f, 0.7f, 0.7f, 1.0f };
+			GLfloat defaultSpecular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, defaultAmbient);
+			glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultDiffuse);
+			glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultSpecular);
+			glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32.0f);
+		}
 	}
+	
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < _faceData.indices.size(); i += 3) {
 		renderTriangle(i, texture, useTexture);
 	}
 	glEnd();
+	
+	// Réactiver GL_COLOR_MATERIAL par défaut
+	glEnable(GL_COLOR_MATERIAL);
 	
 	cleanupTexture(texture, useTexture);
 	glPopMatrix();
@@ -118,6 +146,7 @@ void renderObj::renderTriangle(size_t triangleIndex, const Texture* texture, boo
 		vertices[i][2] = _faceData.vertices[index * 3 + 2] - _centerZ;
 	}
 	
+	// Calcul des edges pour la normale
 	float edge1[3] = {
 		vertices[1][0] - vertices[0][0],
 		vertices[1][1] - vertices[0][1],
@@ -129,10 +158,12 @@ void renderObj::renderTriangle(size_t triangleIndex, const Texture* texture, boo
 		vertices[2][2] - vertices[0][2]
 	};
 	
+	// Calcul de la normale (produit vectoriel)
 	float nx = edge1[1] * edge2[2] - edge1[2] * edge2[1];
 	float ny = edge1[2] * edge2[0] - edge1[0] * edge2[2];
 	float nz = edge1[0] * edge2[1] - edge1[1] * edge2[0];
 	
+	// Normalisation
 	float nLength = sqrt(nx*nx + ny*ny + nz*nz);
 	if (nLength > 0.0f) {
 		nx /= nLength;
@@ -140,15 +171,27 @@ void renderObj::renderTriangle(size_t triangleIndex, const Texture* texture, boo
 		nz /= nLength;
 	}
 	
-	glNormal3f(-nx, -ny, -nz);
+	glNormal3f(nx, ny, nz);
 	
-	if (!useTexture || !texture) {
+	// Couleur par défaut si pas de texture ET pas de matériau
+	if (!_useMaterial && (!useTexture || !texture)) {
 		size_t triangleNum = triangleIndex / 3;
 		float grayValue = 0.3f + (triangleNum % 3) * 0.1f;
 		glColor3f(grayValue, grayValue, grayValue);
 	}
 	
-	int triangleFace = calculateTriangleFace(vertices);
+	// Déterminer la face du triangle à partir de la normale déjà calculée
+	int triangleFace = 0;
+	float absNx = fabs(nx), absNy = fabs(ny), absNz = fabs(nz);
+	
+	if (absNx > absNy && absNx > absNz) {
+		triangleFace = (nx > 0) ? 1 : 2;
+	} else if (absNy > absNx && absNy > absNz) {
+		triangleFace = (ny > 0) ? 3 : 4;
+	} else {
+		triangleFace = (nz > 0) ? 5 : 6;
+	}
+	
 	bool applyTexture = useTexture && texture && (_currentTextureFace == 0 || _currentTextureFace == triangleFace);
 	
 	for (int j = 0; j < 3; ++j) {
@@ -194,24 +237,31 @@ int renderObj::calculateTriangleFace(float vertices[3][3])
 	}
 }
 
+void renderObj::calculateTextureBounds()
+{
+	if (_boundsCalculated || _faceData.vertices.empty())
+		return;
+		
+	_minX = _maxX = _faceData.vertices[0] - _centerX;
+	_minY = _maxY = _faceData.vertices[1] - _centerY;
+	_minZ = _maxZ = _faceData.vertices[2] - _centerZ;
+	
+	for (size_t i = 0; i < _faceData.vertices.size(); i += 3) {
+		float vx = _faceData.vertices[i] - _centerX;
+		float vy = _faceData.vertices[i + 1] - _centerY;
+		float vz = _faceData.vertices[i + 2] - _centerZ;
+		
+		_minX = fmin(_minX, vx); _maxX = fmax(_maxX, vx);
+		_minY = fmin(_minY, vy); _maxY = fmax(_maxY, vy);
+		_minZ = fmin(_minZ, vz); _maxZ = fmax(_maxZ, vz);
+	}
+	_boundsCalculated = true;
+}
+
 void renderObj::calculateTextureCoords(float x, float y, float z, int triangleFace, float& u, float& v)
 {
-	static float minX = 1000.0f, maxX = -1000.0f;
-	static float minY = 1000.0f, maxY = -1000.0f; 
-	static float minZ = 1000.0f, maxZ = -1000.0f;
-	static bool boundsCalculated = false;
-	
-	if (!boundsCalculated) {
-		for (size_t i = 0; i < _faceData.vertices.size(); i += 3) {
-			float vx = _faceData.vertices[i] - _centerX;
-			float vy = _faceData.vertices[i + 1] - _centerY;
-			float vz = _faceData.vertices[i + 2] - _centerZ;
-			
-			minX = fmin(minX, vx); maxX = fmax(maxX, vx);
-			minY = fmin(minY, vy); maxY = fmax(maxY, vy);
-			minZ = fmin(minZ, vz); maxZ = fmax(maxZ, vz);
-		}
-		boundsCalculated = true;
+	if (!_boundsCalculated) {
+		calculateTextureBounds();
 	}
 	
 	float coord1, coord2;
@@ -219,16 +269,16 @@ void renderObj::calculateTextureCoords(float x, float y, float z, int triangleFa
 	
 	if (triangleFace == 1 || triangleFace == 2) {
 		coord1 = z; coord2 = y;
-		min1 = minZ; max1 = maxZ;
-		min2 = minY; max2 = maxY;
+		min1 = _minZ; max1 = _maxZ;
+		min2 = _minY; max2 = _maxY;
 	} else if (triangleFace == 3 || triangleFace == 4) {
 		coord1 = x; coord2 = z;
-		min1 = minX; max1 = maxX;
-		min2 = minZ; max2 = maxZ;
+		min1 = _minX; max1 = _maxX;
+		min2 = _minZ; max2 = _maxZ;
 	} else {
 		coord1 = x; coord2 = y;
-		min1 = minX; max1 = maxX;
-		min2 = minY; max2 = maxY;
+		min1 = _minX; max1 = _maxX;
+		min2 = _minY; max2 = _maxY;
 	}
 	
 	float width = max1 - min1;

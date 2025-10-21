@@ -8,7 +8,7 @@ Scop::Scop(): _running(false), _window(nullptr),
 			   _frontX(0.0f), _frontY(0.0f), _frontZ(-1.0f),
 			   _sunX(5.0f), _sunY(5.0f), _sunZ(5.0f),
 			   _sunOrbitRadius(8.66f), _sunOrbitAngleH(45.0f), _sunOrbitAngleV(35.26f),
-			   _textureEnabled(false), _materialEnabled(true), _sunEnabled(false),
+			   _textureEnabled(false), _materialEnabled(false), _sunEnabled(false),
 			   _tKeyPressed(false), _fKeyPressed(false),
 			   _mKeyPressed(false), _lKeyPressed(false)
 {
@@ -91,21 +91,33 @@ void Scop::run()
 				  targetX, targetY, targetZ,
 				  0.0, 1.0, 0.0);
 
-		if (_sunEnabled) {
+		// Configuration de la lumière
+		if (_sunEnabled || _materialEnabled) {
 			glEnable(GL_LIGHTING);
 			glEnable(GL_LIGHT0);
+			
 			GLfloat lightPos[] = { _sunX, _sunY, _sunZ, 1.0f };
+			GLfloat lightAmbient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+			GLfloat lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			GLfloat lightSpecular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			
 			glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+			glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+			glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+			glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
 
-			glDisable(GL_LIGHTING);
-    		glColor3f(1.0f, 1.0f, 0.0f);
-    		glPushMatrix();
-    		glTranslatef(lightPos[0], lightPos[1], lightPos[2]);
-    		GLUquadric* quad = gluNewQuadric();
-			gluSphere(quad, 0.3, 20, 20);
-			gluDeleteQuadric(quad);
-    		glPopMatrix();
-    		glEnable(GL_LIGHTING); 
+			// Dessiner le soleil seulement si _sunEnabled
+			if (_sunEnabled) {
+				glDisable(GL_LIGHTING);
+				glColor3f(1.0f, 1.0f, 0.0f);
+				glPushMatrix();
+				glTranslatef(lightPos[0], lightPos[1], lightPos[2]);
+				GLUquadric* quad = gluNewQuadric();
+				gluSphere(quad, 0.3, 20, 20);
+				gluDeleteQuadric(quad);
+				glPopMatrix();
+				glEnable(GL_LIGHTING);
+			}
 		} else {
 			glDisable(GL_LIGHTING);
 			glDisable(GL_LIGHT0);
@@ -124,6 +136,32 @@ bool Scop::loadObjFile(const std::string &filename)
 	if (!parser.parse(filename)) {
 		std::cerr << "Failed to parse OBJ file: " << filename << std::endl;
 		return false;
+	}
+
+	if (parser.hasMaterials()) {
+		std::string mtlFilename = parser.getFileMaterialName();
+		std::string materialName = parser.getCurrentMaterial();
+		
+		std::string objPath = filename;
+		size_t lastSlash = objPath.find_last_of("/\\");
+		std::string mtlPath;
+		
+		if (lastSlash != std::string::npos) {
+			mtlPath = objPath.substr(0, lastSlash + 1) + mtlFilename;
+		} else {
+			mtlPath = mtlFilename;
+		}
+		
+		std::cout << "Loading MTL file: " << mtlPath << std::endl;
+		std::cout << "Material name: " << materialName << std::endl;
+		
+		if (_material.loadFromMTL(mtlPath, materialName)) {
+			std::cout << "Material loaded successfully" << std::endl;
+			_material.setvalue();  // Appliquer les valeurs chargées
+			_render.setMaterial(&_material);
+		} else {
+			std::cerr << "Warning: Failed to load material from MTL file" << std::endl;
+		}
 	}
 
 	if (!_render.setupFromParser(parser)) {

@@ -1,4 +1,5 @@
 # Sphère générée automatiquement
+mtllib metal.mtl
 o Sphere
 
 v 0 1.5 0
@@ -497,7 +498,7 @@ v -1.0609e-07 -1.5 7.70787e-08
 v -1.19797e-07 -1.5 5.33371e-08
 v -1.28269e-07 -1.5 2.72643e-08
 v -1.31134e-07 -1.5 -2.29282e-14
-
+usemtl Metal
 # Faces de la sphère
 f 1 32 33
 f 1 33 2

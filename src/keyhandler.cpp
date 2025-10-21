@@ -59,12 +59,14 @@ void Scop::handleInput()
 	{
 		if (glfwGetKey(_window, GLFW_KEY_M) == GLFW_PRESS) {
 			if (!_mKeyPressed) {
+				if (!_sunEnabled)
+					_sunEnabled = !_sunEnabled;
 				_materialEnabled = !_materialEnabled;
 				_render.setUseMaterial(_materialEnabled);
 				_mKeyPressed = true;
 			}
-			} else {
-				_mKeyPressed = false;
+		} else {
+			_mKeyPressed = false;
 		}
 	}
 
@@ -86,26 +88,26 @@ void Scop::handleInput()
 			_cameraZ -= _frontZ * cameraSpeed;
 		}
 		if (glfwGetKey(_window, GLFW_KEY_A) == GLFW_PRESS) {
-			float rightX = _frontY * 0.0f - _frontZ * 1.0f;
-			float rightZ = _frontX * 1.0f - _frontY * 0.0f;
-			float length = sqrt(rightX * rightX + rightZ * rightZ);
-			if (length > 0) {
-				rightX /= length;
-				rightZ /= length;
+			_rightX = _frontY * 0.0f - _frontZ * 1.0f;
+			_rightZ = _frontX * 1.0f - _frontY * 0.0f;
+			_length = sqrt(_rightX * _rightX + _rightZ * _rightZ);
+			if (_length > 0) {
+				_rightX /= _length;
+				_rightZ /= _length;
 			}
-			_cameraX -= rightX * cameraSpeed;
-			_cameraZ -= rightZ * cameraSpeed;
+			_cameraX -= _rightX * cameraSpeed;
+			_cameraZ -= _rightZ * cameraSpeed;
 		}
 		if (glfwGetKey(_window, GLFW_KEY_D) == GLFW_PRESS) {
-			float rightX = _frontY * 0.0f - _frontZ * 1.0f;
-			float rightZ = _frontX * 1.0f - _frontY * 0.0f;
-			float length = sqrt(rightX * rightX + rightZ * rightZ);
-			if (length > 0) {
-				rightX /= length;
-				rightZ /= length;
+			_rightX = _frontY * 0.0f - _frontZ * 1.0f;
+			_rightZ = _frontX * 1.0f - _frontY * 0.0f;
+			_length = sqrt(_rightX * _rightX + _rightZ * _rightZ);
+			if (_length > 0) {
+				_rightX /= _length;
+				_rightZ /= _length;
 			}
-			_cameraX += rightX * cameraSpeed;
-			_cameraZ += rightZ * cameraSpeed;
+			_cameraX += _rightX * cameraSpeed;
+			_cameraZ += _rightZ * cameraSpeed;
 		}
 
 		if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
@@ -118,10 +120,9 @@ void Scop::handleInput()
 
 	// Object movement
 	if (!_mousePressed) {
+		objectSpeed = 0.3f;  // Vitesse de base
 		if (glfwGetKey(_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-			objectSpeed += 1.0f;// camera speed X10
-		} else {
-			objectSpeed = 0.3f;// camera speed X1
+			objectSpeed = 1.3f;  // Vitesse augmentée avec Shift
 		}
 		if (glfwGetKey(_window, GLFW_KEY_W) == GLFW_PRESS) {
 			_render.objectZ -= objectSpeed; // front

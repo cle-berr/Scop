@@ -33,6 +33,8 @@ class renderObj
 		int getTextureFace() const { return _currentTextureFace; }
 		void nextTextureFace() { _currentTextureFace = (_currentTextureFace + 1) % 7; }
 
+		void setMaterial(Material* material) { _material = material; }
+
 		void rend(const class Texture* texture, bool useTexture);
 		
 		float objectX, objectY, objectZ;
@@ -45,6 +47,10 @@ class renderObj
 		float _rotationSpeed;
 		int _currentTextureFace;
 		
+		// Bounds pour le calcul des coordonnées de texture
+		float _minX, _maxX, _minY, _maxY, _minZ, _maxZ;
+		bool _boundsCalculated;
+		
 		Material *_material; 
 		void setupTransformations();
 		void setupTexture(const Texture* texture, bool useTexture);
@@ -52,4 +58,5 @@ class renderObj
 		void renderTriangle(size_t triangleIndex, const Texture* texture, bool useTexture);
 		int calculateTriangleFace(float vertices[3][3]);
 		void calculateTextureCoords(float x, float y, float z, int triangleFace, float& u, float& v);
+		void calculateTextureBounds();
 };

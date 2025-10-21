@@ -8,6 +8,7 @@
 #include "obj_parser.hpp"
 #include "render_obj.hpp"
 #include "texture.hpp"
+#include "material.hpp"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
@@ -35,6 +36,7 @@ class Scop
 		GLFWwindow *_window;
 		renderObj _render;
 		Texture _texture;
+		Material _material;
 		
 		double _lastMouseX;
 		double _lastMouseY;
@@ -45,6 +47,9 @@ class Scop
 		
 		float _cameraX, _cameraY, _cameraZ;
 		float _frontX, _frontY, _frontZ;
+		float _rightX, _rightY, _rightZ;
+		float _length;
+		float _worldUpX = 0.0f, _worldUpY = 1.0f, _worldUpZ = 0.0f;
 		
 		float _sunX, _sunY, _sunZ;
 		float _sunOrbitRadius;
