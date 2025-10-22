@@ -16,6 +16,7 @@ class Texture
 		void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
 		int getWidth() const { return _width; }
 		int getHeight() const { return _height; }
+		bool hasTexture() const { return _textureID != 0; }
 
 	private:
 		GLuint _textureID;

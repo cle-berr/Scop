@@ -9,14 +9,6 @@ Ns 200.0              # Shininess élevé pour un métal poli
 d 1.0                 # Opacité totale
 illum 2               # Illumination avec ambient, diffuse et specular
 
-newmtl Chrome
-Ka 0.25 0.25 0.25     # Ambient
-Kd 0.4 0.4 0.4        # Diffuse chrome
-Ks 0.95 0.95 0.95     # Specular très élevé
-Ns 300.0              # Très brillant
-d 1.0
-illum 2
-
 newmtl Gold
 Ka 0.24725 0.1995 0.0745    # Ambient doré
 Kd 0.75164 0.60648 0.22648  # Diffuse or
@@ -25,13 +17,21 @@ Ns 51.2                      # Shininess modéré
 d 1.0
 illum 2
 
-newmtl Silver
-Ka 0.19225 0.19225 0.19225  # Ambient argenté
-Kd 0.50754 0.50754 0.50754  # Diffuse argent
-Ks 0.508273 0.508273 0.508273  # Specular argent
-Ns 51.2
+newmtl fur
+# Matériau pour fourrure diffuse, peu spéculaire
+Ka 0.24725 0.1995 0.0745    # Ambient doré
+Kd 0.75164 0.60648 0.22648  # Diffuse or
+Ks 0.628281 0.555802 0.366065  # Specular or
+Ns 51.2                      # Shininess modéré
 d 1.0
 illum 2
+# Paramètres custom de l'effet "fur"
+# Extensions custom (non standard MTL) pour effet "fur"
+# Nombre de couches, longueur en unités objet, opacité max des poils
+fur_layers 20
+fur_length 0.003
+fur_opacity 0.20
+fur_color 0.0 0.0 0.0
 
 newmtl Copper
 Ka 0.19125 0.0735 0.0225    # Ambient cuivré

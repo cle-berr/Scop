@@ -35,11 +35,15 @@ class renderObj
 
 		void setMaterial(Material* material) { _material = material; }
 
-		void rend(const class Texture* texture, bool useTexture);
+	void rend(const class Texture* texture, bool useTexture, bool furEnabled);
+		
+		float getBoundingRadius();
+		void getBoundingBox(float& minX, float& maxX, float& minY, float& maxY, float& minZ, float& maxZ);
 		
 		float objectX, objectY, objectZ;
-
-	private:
+		float _rotateX, _rotateY, _rotateZ;
+		
+		private:
 		FaceData _faceData;
 		float _centerX, _centerY, _centerZ;
 		bool _useMaterial;
@@ -47,7 +51,10 @@ class renderObj
 		float _rotationSpeed;
 		int _currentTextureFace;
 		
-		// Bounds pour le calcul des coordonnées de texture
+		// Smooth texture transition (0 = colors/material only, 1 = full texture)
+		float _textureMix;
+		float _textureMixSpeed;
+		
 		float _minX, _maxX, _minY, _maxY, _minZ, _maxZ;
 		bool _boundsCalculated;
 		
@@ -59,4 +66,5 @@ class renderObj
 		int calculateTriangleFace(float vertices[3][3]);
 		void calculateTextureCoords(float x, float y, float z, int triangleFace, float& u, float& v);
 		void calculateTextureBounds();
+		void setupFurLayers();
 };

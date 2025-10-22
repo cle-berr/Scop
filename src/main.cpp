@@ -1,6 +1,6 @@
 #include "../include/scop.hpp"
 
-Scop::Scop(): _running(false), _window(nullptr), 
+Scop::Scop():  _furEnabled(false), _running(false), _window(nullptr), 
 			   _lastMouseX(WINDOW_WIDTH/2.0), _lastMouseY(WINDOW_HEIGHT/2.0),
 			   _firstMouse(true), _yaw(-90.0f), _pitch(0.0f), 
 			   _mousePressed(false),
@@ -9,8 +9,9 @@ Scop::Scop(): _running(false), _window(nullptr),
 			   _sunX(5.0f), _sunY(5.0f), _sunZ(5.0f),
 			   _sunOrbitRadius(8.66f), _sunOrbitAngleH(45.0f), _sunOrbitAngleV(35.26f),
 			   _textureEnabled(false), _materialEnabled(false), _sunEnabled(false),
-			   _tKeyPressed(false), _fKeyPressed(false),
-			   _mKeyPressed(false), _lKeyPressed(false)
+			   _tKeyPressed(false), _fKeyPressed(false), _mKeyPressed(false),
+			   _lKeyPressed(false), _pKeyPressed(false), _1KeyPressed(false),
+			   _2KeyPressed(false), _3KeyPressed(false), _viewSun(false), _vKeyPressed(false)
 {
 	updateSunPosition();
 }
@@ -59,7 +60,7 @@ bool Scop::init()
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, (double)WINDOW_WIDTH/(double)WINDOW_HEIGHT, 0.1, 10240.0);
+	gluPerspective(45.0, (double)WINDOW_WIDTH/(double)WINDOW_HEIGHT, 0.1, 100024.0);
 	glMatrixMode(GL_MODELVIEW);
 	
 	_running = true;
@@ -112,9 +113,11 @@ void Scop::run()
 				glColor3f(1.0f, 1.0f, 0.0f);
 				glPushMatrix();
 				glTranslatef(lightPos[0], lightPos[1], lightPos[2]);
-				GLUquadric* quad = gluNewQuadric();
-				gluSphere(quad, 0.3, 20, 20);
-				gluDeleteQuadric(quad);
+				if (_viewSun) {
+					GLUquadric* quad = gluNewQuadric();
+					gluSphere(quad, 0.3, 20, 20);
+					gluDeleteQuadric(quad);
+				}
 				glPopMatrix();
 				glEnable(GL_LIGHTING);
 			}
@@ -124,7 +127,7 @@ void Scop::run()
 		}
 
 		glTranslatef(_render.objectX, _render.objectY, _render.objectZ);
-		_render.rend(&_texture, _textureEnabled);
+		_render.rend(&_texture, _textureEnabled, _furEnabled);
 
 		glfwSwapBuffers(_window);
 	}
@@ -152,14 +155,12 @@ bool Scop::loadObjFile(const std::string &filename)
 			mtlPath = mtlFilename;
 		}
 		
-		std::cout << "Loading MTL file: " << mtlPath << std::endl;
-		std::cout << "Material name: " << materialName << std::endl;
-		
 		if (_material.loadFromMTL(mtlPath, materialName)) {
-			std::cout << "Material loaded successfully" << std::endl;
-			_material.setvalue();  // Appliquer les valeurs chargées
+			_hasmaterial = true;
+			_material.setvalue();
 			_render.setMaterial(&_material);
 		} else {
+			_hasmaterial = false;
 			std::cerr << "Warning: Failed to load material from MTL file" << std::endl;
 		}
 	}
@@ -168,7 +169,52 @@ bool Scop::loadObjFile(const std::string &filename)
 		std::cerr << "Failed to setup renderer from parser" << std::endl;
 		return false;
 	}
+	
+	positionCameraForObject();
+	
 	return true;
+}
+
+void Scop::positionCameraForObject()
+{
+	float radius = _render.getBoundingRadius();
+	
+	if (radius <= 0.0f) {
+		radius = 1.0f;
+	}
+	
+	float fovRadians = 45.0f * M_PI / 180.0f;
+
+	float distance = (radius / tan(fovRadians / 2.0f)) * 1.0f;
+	
+	_cameraX = 0.0f;
+	_cameraY = 0.0f;
+	_cameraZ = distance;
+	
+	_yaw = -90.0f;
+	_pitch = 0.0f;
+	
+	_frontX = 0.0f;
+	_frontY = 0.0f;
+	_frontZ = -1.0f;
+    
+	// Ajuster aussi la distance de la lumière pour être proportionnelle à l'objet
+	positionSunForObject();
+}
+
+void Scop::positionSunForObject()
+{
+	float radius = _render.getBoundingRadius();
+	if (radius <= 0.0f) radius = 1.0f;
+
+	// Place the light on a sphere around the object; 2.5x radius works well
+	_sunOrbitRadius = radius * 2.5f;
+	// Keep pleasant default angles
+	if (_sunOrbitAngleH == 0.0f && _sunOrbitAngleV == 0.0f) {
+		_sunOrbitAngleH = 45.0f;
+		_sunOrbitAngleV = 35.26f;
+	}
+	updateSunPosition();
 }
 
 bool Scop::loadTexture(const std::string &filename)

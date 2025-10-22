@@ -27,6 +27,10 @@ class Scop
 		static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 		static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
+		void positionCameraForObject();  // Positionne la caméra en fonction de la taille de l'objet
+		void positionSunForObject();     // Positionne la lumière (sun) selon la taille de l'objet
+		bool _furEnabled;
+
 	private:
 		void handleInput();
 		void updateCamera(double xpos, double ypos);
@@ -37,6 +41,7 @@ class Scop
 		renderObj _render;
 		Texture _texture;
 		Material _material;
+		objParser _parser;
 		
 		double _lastMouseX;
 		double _lastMouseY;
@@ -58,9 +63,17 @@ class Scop
 		
 		bool _textureEnabled;
 		bool _materialEnabled;
+		bool _hasmaterial;
 		bool _sunEnabled;
 		bool _tKeyPressed;
 		bool _fKeyPressed;
 		bool _mKeyPressed;
 		bool _lKeyPressed;
+		bool _pKeyPressed;
+		bool _1KeyPressed;
+		bool _2KeyPressed;
+		bool _3KeyPressed;
+		bool _viewSun;
+		bool _vKeyPressed;
+
 };

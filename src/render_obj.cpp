@@ -4,12 +4,14 @@
 #include <algorithm>
 
 renderObj::renderObj() : objectX(0.0f), objectY(0.0f), objectZ(0.0f),
+						 _rotateX(0.0f), _rotateY(1.0f), _rotateZ(0.0f), 
 						 _faceData(), _centerX(0.0f), _centerY(0.0f), _centerZ(0.0f),
-					 _useMaterial(false), _rotationAngle(0.0f), _rotationSpeed(0.03f), 
-					 _currentTextureFace(0),
-					 _minX(1000.0f), _maxX(-1000.0f), _minY(1000.0f), _maxY(-1000.0f),
-					 _minZ(1000.0f), _maxZ(-1000.0f), _boundsCalculated(false),
-					 _material(nullptr) {}
+						 _useMaterial(false), _rotationAngle(0.0f), _rotationSpeed(0.03f),
+						 _currentTextureFace(0),
+						 _textureMix(0.0f), _textureMixSpeed(0.08f),
+						 _minX(1000.0f), _maxX(-1000.0f), _minY(1000.0f), _maxY(-1000.0f),
+						 _minZ(1000.0f), _maxZ(-1000.0f), _boundsCalculated(false),
+						 _material(nullptr) {}
 
 renderObj::~renderObj() {}
 
@@ -63,13 +65,23 @@ void renderObj::calculateCenter()
 	_centerZ /= (_faceData.vertices.size() / 3);
 }
 
-void renderObj::rend(const Texture* texture, bool useTexture)
+void renderObj::rend(const Texture* texture, bool useTexture, bool furEnabled)
 {
 	if (_faceData.indices.empty() || _faceData.vertices.empty())
 		return;
-	
+    
 	setupTransformations();
-	setupTexture(texture, useTexture);
+
+	// Smoothly animate texture mix towards target (useTexture ? 1 : 0)
+	float targetMix = useTexture ? 1.0f : 0.0f;
+	if (_textureMix < targetMix) {
+		_textureMix = std::min(targetMix, _textureMix + _textureMixSpeed);
+	} else if (_textureMix > targetMix) {
+		_textureMix = std::max(targetMix, _textureMix - _textureMixSpeed);
+	}
+
+	bool wantTexture = (texture != nullptr) && (_textureMix > 0.001f);
+	setupTexture(texture, wantTexture);
 	
 	// Gestion du matériau
 	if (_useMaterial && _material) {
@@ -93,15 +105,93 @@ void renderObj::rend(const Texture* texture, bool useTexture)
 	
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < _faceData.indices.size(); i += 3) {
-		renderTriangle(i, texture, useTexture);
+		bool applyTex = useTexture || (_textureMix > 0.001f);
+		renderTriangle(i, texture, applyTex);
 	}
 	glEnd();
+
+	if (_useMaterial && _material && _material->hasFur() && furEnabled) {
+		setupFurLayers();
+	}
 	
-	// Réactiver GL_COLOR_MATERIAL par défaut
 	glEnable(GL_COLOR_MATERIAL);
 	
 	cleanupTexture(texture, useTexture);
 	glPopMatrix();
+}
+
+void renderObj::setupFurLayers()
+{
+	int layers = _material->getFurLayers();
+		float length = _material->getFurLength();
+		float baseAlpha = _material->getFurOpacity();
+
+		if (layers > 0 && length > 0.0f && baseAlpha > 0.0f) {
+			// Le fur ne se texture pas ici, on utilise un shading simple avec alpha
+			glDisable(GL_TEXTURE_2D);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glDepthMask(GL_FALSE); // ne pas écrire dans le depth pour les coques
+			glEnable(GL_COLOR_MATERIAL);
+			glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+			for (int li = 1; li <= layers; ++li) {
+				float t = (float)li / (float)layers;
+				float offset = length * t;
+				float a = baseAlpha * (1.0f - t * 0.9f);
+				glColor4f(_material->getFurColor(0), _material->getFurColor(1), _material->getFurColor(2), a);
+
+				glBegin(GL_TRIANGLES);
+				for (size_t i = 0; i < _faceData.indices.size(); i += 3) {
+					unsigned int idx0 = _faceData.indices[i + 0];
+					unsigned int idx1 = _faceData.indices[i + 1];
+					unsigned int idx2 = _faceData.indices[i + 2];
+
+					float v0[3] = {
+						_faceData.vertices[idx0 * 3] - _centerX,
+						_faceData.vertices[idx0 * 3 + 1] - _centerY,
+						_faceData.vertices[idx0 * 3 + 2] - _centerZ
+					};
+					float v1[3] = {
+						_faceData.vertices[idx1 * 3] - _centerX,
+						_faceData.vertices[idx1 * 3 + 1] - _centerY,
+						_faceData.vertices[idx1 * 3 + 2] - _centerZ
+					};
+					float v2[3] = {
+						_faceData.vertices[idx2 * 3] - _centerX,
+						_faceData.vertices[idx2 * 3 + 1] - _centerY,
+						_faceData.vertices[idx2 * 3 + 2] - _centerZ
+					};
+
+					float e1[3] = { v1[0]-v0[0], v1[1]-v0[1], v1[2]-v0[2] };
+					float e2[3] = { v2[0]-v0[0], v2[1]-v0[1], v2[2]-v0[2] };
+					float nx = e1[1]*e2[2] - e1[2]*e2[1];
+					float ny = e1[2]*e2[0] - e1[0]*e2[2];
+					float nz = e1[0]*e2[1] - e1[1]*e2[0];
+					float nL = sqrt(nx*nx + ny*ny + nz*nz);
+					if (nL > 0.0f) { nx/=nL; ny/=nL; nz/=nL; }
+					glNormal3f(nx, ny, nz);
+
+					float addx = nx * offset;
+					float addy = ny * offset;
+					float addz = nz * offset;
+
+					glVertex3f(_faceData.vertices[idx0 * 3] + addx,
+					           _faceData.vertices[idx0 * 3 + 1] + addy,
+					           _faceData.vertices[idx0 * 3 + 2] + addz);
+					glVertex3f(_faceData.vertices[idx1 * 3] + addx,
+					           _faceData.vertices[idx1 * 3 + 1] + addy,
+					           _faceData.vertices[idx1 * 3 + 2] + addz);
+					glVertex3f(_faceData.vertices[idx2 * 3] + addx,
+					           _faceData.vertices[idx2 * 3 + 1] + addy,
+					           _faceData.vertices[idx2 * 3 + 2] + addz);
+				}
+				glEnd();
+			}
+
+			glDepthMask(GL_TRUE);
+			glDisable(GL_BLEND);
+		}
 }
 
 void renderObj::setupTransformations()
@@ -112,8 +202,8 @@ void renderObj::setupTransformations()
 	if (_rotationAngle > 360.0f)
 		_rotationAngle -= 360.0f;
 
-	glTranslatef(0.0f, 0.0f, -5.0f);
-	glRotatef(_rotationAngle * 30.0f, 0.0f, 1.0f, 0.0f);
+	glTranslatef(0.0f, 0.0f, 0.0f);
+	glRotatef(_rotationAngle * 30.0f, _rotateX, _rotateY, _rotateZ);
 	glTranslatef(-_centerX, -_centerY, -_centerZ);
 }
 
@@ -122,7 +212,20 @@ void renderObj::setupTexture(const Texture* texture, bool useTexture)
 	if (useTexture && texture) {
 		glEnable(GL_TEXTURE_2D);
 		texture->bind();
-		glColor3f(1.0f, 1.0f, 1.0f);
+		glColor3f(0.1f, 0.1f, 0.1f);
+
+		// Interpolate between primary color and texture using _textureMix as factor
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PRIMARY_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_CONSTANT);
+		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
+
+		GLfloat envColor[4] = {1.0f, 1.0f, 1.0f, _textureMix};
+		glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, envColor);
 	} else {
 		glDisable(GL_TEXTURE_2D);
 	}
@@ -131,6 +234,8 @@ void renderObj::setupTexture(const Texture* texture, bool useTexture)
 void renderObj::cleanupTexture(const Texture* texture, bool useTexture)
 {
 	if (useTexture && texture) {
+		// Restore default modulate mode
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		texture->unbind();
 		glDisable(GL_TEXTURE_2D);
 	}
@@ -292,4 +397,40 @@ void renderObj::calculateTextureCoords(float x, float y, float z, int triangleFa
 	}
 	u = fmax(0.0f, fmin(1.0f, u));
 	v = fmax(0.0f, fmin(1.0f, v));
+}
+
+float renderObj::getBoundingRadius()
+{
+	if (!_boundsCalculated) {
+		calculateTextureBounds();
+	}
+	
+	float maxRadius = 0.0f;
+	
+	for (size_t i = 0; i < _faceData.vertices.size(); i += 3) {
+		float dx = _faceData.vertices[i] - _centerX;
+		float dy = _faceData.vertices[i + 1] - _centerY;
+		float dz = _faceData.vertices[i + 2] - _centerZ;
+		
+		float radius = sqrt(dx*dx + dy*dy + dz*dz);
+		if (radius > maxRadius) {
+			maxRadius = radius;
+		}
+	}
+	
+	return maxRadius;
+}
+
+void renderObj::getBoundingBox(float& minX, float& maxX, float& minY, float& maxY, float& minZ, float& maxZ)
+{
+	if (!_boundsCalculated) {
+		calculateTextureBounds();
+	}
+	
+	minX = _minX + _centerX;
+	maxX = _maxX + _centerX;
+	minY = _minY + _centerY;
+	maxY = _maxY + _centerY;
+	minZ = _minZ + _centerZ;
+	maxZ = _maxZ + _centerZ;
 }
