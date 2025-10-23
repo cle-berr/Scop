@@ -71,18 +71,8 @@ void renderObj::rend(const Texture* texture, bool useTexture, bool furEnabled)
 		return;
     
 	setupTransformations();
+	setupTexture(texture, useTexture);
 
-	// Smoothly animate texture mix towards target (useTexture ? 1 : 0)
-	float targetMix = useTexture ? 1.0f : 0.0f;
-	if (_textureMix < targetMix) {
-		_textureMix = std::min(targetMix, _textureMix + _textureMixSpeed);
-	} else if (_textureMix > targetMix) {
-		_textureMix = std::max(targetMix, _textureMix - _textureMixSpeed);
-	}
-
-	bool wantTexture = (texture != nullptr) && (_textureMix > 0.001f);
-	setupTexture(texture, wantTexture);
-	
 	// Gestion du matériau
 	if (_useMaterial && _material) {
 		glDisable(GL_COLOR_MATERIAL);  // Désactiver pour que le matériau fonctionne
@@ -105,8 +95,7 @@ void renderObj::rend(const Texture* texture, bool useTexture, bool furEnabled)
 	
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < _faceData.indices.size(); i += 3) {
-		bool applyTex = useTexture || (_textureMix > 0.001f);
-		renderTriangle(i, texture, applyTex);
+		renderTriangle(i, texture, useTexture);
 	}
 	glEnd();
 
@@ -212,20 +201,7 @@ void renderObj::setupTexture(const Texture* texture, bool useTexture)
 	if (useTexture && texture) {
 		glEnable(GL_TEXTURE_2D);
 		texture->bind();
-		glColor3f(0.1f, 0.1f, 0.1f);
-
-		// Interpolate between primary color and texture using _textureMix as factor
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PRIMARY_COLOR);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_CONSTANT);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
-
-		GLfloat envColor[4] = {1.0f, 1.0f, 1.0f, _textureMix};
-		glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, envColor);
+		glColor3f(1.0f, 1.0f, 1.0f);
 	} else {
 		glDisable(GL_TEXTURE_2D);
 	}
@@ -234,7 +210,6 @@ void renderObj::setupTexture(const Texture* texture, bool useTexture)
 void renderObj::cleanupTexture(const Texture* texture, bool useTexture)
 {
 	if (useTexture && texture) {
-		// Restore default modulate mode
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		texture->unbind();
 		glDisable(GL_TEXTURE_2D);

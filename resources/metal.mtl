@@ -19,10 +19,10 @@ illum 2
 
 newmtl fur
 # Matériau pour fourrure diffuse, peu spéculaire
-Ka 0.24725 0.1995 0.0745    # Ambient doré
-Kd 0.75164 0.60648 0.22648  # Diffuse or
-Ks 0.628281 0.555802 0.366065  # Specular or
-Ns 51.2                      # Shininess modéré
+Ka 0.24725 0.1995 0.0745
+Kd 0.75164 0.60648 0.22648
+Ks 0.628281 0.555802 0.366065
+Ns 51.2
 d 1.0
 illum 2
 # Paramètres custom de l'effet "fur"

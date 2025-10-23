@@ -56,14 +56,12 @@ Obligatoires du sujet:
 - Application d’une texture simple sur l’objet via une touche et retour aux couleurs: OUI (touche T)
 - Gestion d’une fenêtre et des événements clavier/souris: OUI (GLFW)
 - Makefile: OUI
-- Transition douce entre affichage couleur et texture: OUI (mix progressif lors du toggle T)
 
 Bonus réalisés (par rapport à l’extrait fourni):
 
 - Lumière dynamique (sun) orbitant autour de l’objet, visualisée par une sphère.
 - Matériaux MTL: chargement et application (Ka/Kd/Ks/Ns/opacity)
 - Déplacement libre caméra ET déplacement de l’objet
-- Transition douce entre couleur et texture (mix progressif quand on presse T)
 - Auto-positionnement caméra en fonction de la taille du modèle
 - Auto-positionnement du soleil: distance orbitale proportionnelle à la taille du modèle
 - Effet "fur" (fourrure) via extensions MTL custom (fur_layers, fur_length, fur_opacity, fur_color) et matériau `newmtl fur`
@@ -73,7 +71,7 @@ Bonus réalisés (par rapport à l’extrait fourni):
 - Caméra auto-positionnée en fonction de la taille de l’objet (rayon de la sphère englobante et FOV de 45°)
 - Soleil auto-positionné: distance orbitale proportionnelle à la taille de l’objet
 - Normales par face calculées côté CPU (gouraud/flat OpenGL fixed pipeline)
-- Transition texture lissée via GL_COMBINE (fixed pipeline, pas de shaders)
+- Texture appliquée via GL_MODULATE (fixed pipeline, pas de shaders)
 - Le matériau rétablit l’état OpenGL par défaut quand on le désactive pour éviter des effets persistants
 
 ### Utiliser l’effet fur
