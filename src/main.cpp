@@ -60,7 +60,7 @@ bool Scop::init()
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, (double)WINDOW_WIDTH/(double)WINDOW_HEIGHT, 0.1, 100024.0);
+	gluPerspective(45.0, (double)WINDOW_WIDTH/(double)WINDOW_HEIGHT, 0.1, 1024.0);
 	glMatrixMode(GL_MODELVIEW);
 	
 	_running = true;
@@ -185,7 +185,7 @@ void Scop::positionCameraForObject()
 	
 	float fovRadians = 45.0f * M_PI / 180.0f;
 
-	float distance = (radius / tan(fovRadians / 2.0f)) * 1.0f;
+	float distance = radius / tan(fovRadians / 2.0f);
 	
 	_cameraX = 0.0f;
 	_cameraY = 0.0f;
@@ -207,7 +207,7 @@ void Scop::positionSunForObject()
 	float radius = _render.getBoundingRadius();
 	if (radius <= 0.0f) radius = 1.0f;
 
-	// Place the light on a sphere around the object; 2.5x radius works well
+	// Place the light on a sphere around the object
 	_sunOrbitRadius = radius * 2.5f;
 	// Keep pleasant default angles
 	if (_sunOrbitAngleH == 0.0f && _sunOrbitAngleV == 0.0f) {
