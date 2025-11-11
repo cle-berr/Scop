@@ -57,7 +57,7 @@ Obligatoires du sujet:
 - Gestion d’une fenêtre et des événements clavier/souris: OUI (GLFW)
 - Makefile: OUI
 
-Bonus réalisés (par rapport à l’extrait fourni):
+Bonus réalisés:
 
 - Lumière dynamique (sun) orbitant autour de l’objet, visualisée par une sphère.
 - Matériaux MTL: chargement et application (Ka/Kd/Ks/Ns/opacity)
